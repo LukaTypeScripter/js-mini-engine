@@ -34,7 +34,6 @@ export function checkBinaryOperation(
     operator: TokenType,
     right: TypeName
 ): TypeName {
-    // Arithmetic operators: +, -, *, /, %
     if (
         operator === TokenType.PLUS ||
         operator === TokenType.MINUS ||
@@ -42,17 +41,14 @@ export function checkBinaryOperation(
         operator === TokenType.SLASH ||
         operator === TokenType.PERCENT
     ) {
-        // Special case: string concatenation with +
         if (operator === TokenType.PLUS && (left === 'string' || right === 'string')) {
             return 'string';
         }
 
-        // Number arithmetic
         if (left === 'number' && right === 'number') {
             return 'number';
         }
 
-        // Any type bypasses checking
         if (left === 'any' || right === 'any') {
             return 'any';
         }
@@ -62,24 +58,20 @@ export function checkBinaryOperation(
         );
     }
 
-    // Comparison operators: <, <=, >, >=
     if (
         operator === TokenType.LESS ||
         operator === TokenType.LESS_EQUAL ||
         operator === TokenType.GREATER ||
         operator === TokenType.GREATER_EQUAL
     ) {
-        // Numbers can be compared
         if (left === 'number' && right === 'number') {
             return 'boolean';
         }
 
-        // Strings can be compared lexicographically
         if (left === 'string' && right === 'string') {
             return 'boolean';
         }
 
-        // Any type bypasses checking
         if (left === 'any' || right === 'any') {
             return 'boolean';
         }
@@ -89,13 +81,10 @@ export function checkBinaryOperation(
         );
     }
 
-    // Equality operators: ==, !=
     if (operator === TokenType.EQUAL_EQUAL || operator === TokenType.BANG_EQUAL) {
-        // Any types can be compared for equality
         return 'boolean';
     }
 
-    // This shouldn't happen for binary expressions
     throw new Error(`Unknown binary operator: ${operator}`);
 }
 
@@ -104,13 +93,10 @@ export function checkBinaryOperation(
  * Returns the result type or throws an error
  */
 export function checkUnaryOperation(operator: TokenType, operand: TypeName): TypeName {
-    // Logical NOT: !
     if (operator === TokenType.BANG) {
-        // Any value can be converted to boolean
         return 'boolean';
     }
 
-    // Negation: -
     if (operator === TokenType.MINUS) {
         if (operand === 'number') {
             return 'number';
@@ -150,7 +136,6 @@ export function areTypesCompatible(target: TypeName, source: TypeName): boolean 
 
     if (target === 'any' || source === 'any') return true;
 
-    // 'undefined' can accept any type (uninitialized variables)
     if (target === 'undefined') return true;
 
     return false;
