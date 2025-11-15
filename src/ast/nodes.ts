@@ -94,7 +94,7 @@ export interface AssignmentExpression extends Expression {
  */
 export interface CallExpression extends Expression {
   type: 'CallExpression';
-  callee: Expression; // Usually an Identifier
+  callee: Expression;
   arguments: Expression[];
 }
 

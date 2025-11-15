@@ -5,6 +5,7 @@ describe('Statement Parsing', () => {
   function parse(source: string) {
     const scanner = new Scanner(source);
     const tokens = scanner.scanTokens();
+
     const parser = new Parser(tokens);
     return parser.parse();
   }

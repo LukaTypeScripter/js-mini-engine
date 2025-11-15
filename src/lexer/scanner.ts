@@ -137,7 +137,39 @@ export class Scanner {
                const tokenType = lookupIdentifier(identifier);
                tokenList.push(this.createToken(tokenType, identifier))
 
-           } else if(char === '"' || char === "'") {
+           }else if (char === ';') {
+               this.moveNextCharacter();
+               tokenList.push(this.createToken(TokenType.SEMICOLON, ';'));
+           }
+           else if (char === '{') {
+               this.moveNextCharacter();
+               tokenList.push(this.createToken(TokenType.LBRACE, '{'));
+           }
+           else if (char === '}') {
+               this.moveNextCharacter();
+               tokenList.push(this.createToken(TokenType.RBRACE, '}'));
+           }
+           else if (char === ',') {
+               this.moveNextCharacter();
+               tokenList.push(this.createToken(TokenType.COMMA, ','));
+           }
+           else if (char === '.') {
+               this.moveNextCharacter();
+               tokenList.push(this.createToken(TokenType.DOT, '.'));
+           }
+           else if (char === ':') {
+               this.moveNextCharacter();
+               tokenList.push(this.createToken(TokenType.COLON, ':'));
+           }
+           else if (char === '[') {
+               this.moveNextCharacter();
+               tokenList.push(this.createToken(TokenType.LBRACKET, '['));
+           }
+           else if (char === ']') {
+               this.moveNextCharacter();
+               tokenList.push(this.createToken(TokenType.RBRACKET, ']'));
+           }
+           else if(char === '"' || char === "'") {
                const string = this.scanString()
                tokenList.push(this.createToken(TokenType.STRING, string))
            }     else if(char === '(') {
