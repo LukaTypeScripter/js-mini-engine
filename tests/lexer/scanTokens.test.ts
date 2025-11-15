@@ -1,5 +1,5 @@
-import { Scanner } from '../../src/lexer/scanner';
-import { TokenType } from '../../src/lexer/token';
+import { Scanner } from '../../src/lexer';
+import {TokenType} from "../../src/core";
 
 describe('scanTokens()', () => {
   describe('Numbers', () => {

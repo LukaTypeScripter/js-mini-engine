@@ -1,4 +1,4 @@
-import { Scanner } from '../../src/lexer/scanner';
+import { Scanner } from '../../src/lexer';
 
 describe('Scanner', () => {
   describe('Constructor', () => {

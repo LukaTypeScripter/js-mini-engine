@@ -1,4 +1,5 @@
-import { Token, TokenType, lookupIdentifier, KEYWORDS } from '../../src/lexer/token';
+import {KEYWORDS, lookupIdentifier, TokenType} from "../../src/core";
+import {Token} from "../../src/lexer";
 
 describe('Token', () => {
   describe('Constructor', () => {

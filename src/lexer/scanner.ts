@@ -1,4 +1,4 @@
-import {lookupIdentifier, TokenI, TokenType} from "./token";
+import {lookupIdentifier, TokenI, TokenType} from "../core";
 
 
 export class Scanner {
