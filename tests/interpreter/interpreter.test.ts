@@ -559,4 +559,237 @@ describe('Interpreter', () => {
       expect(result).toBeCloseTo(14.333, 2);
     });
   });
+
+  describe('Function Declarations and Calls', () => {
+    it('should execute function without parameters', () => {
+      const result = runAndGetValue(`
+        function getNumber() {
+          return 42;
+        }
+        getNumber();
+      `);
+
+      expect(result).toBe(42);
+    });
+
+    it('should execute function with parameters', () => {
+      const result = runAndGetValue(`
+        function add(a, b) {
+          return a + b;
+        }
+        add(3, 4);
+      `);
+
+      expect(result).toBe(7);
+    });
+
+    it('should execute function with multiple statements', () => {
+      const result = runAndGetValue(`
+        function calculate(x) {
+          let y = x * 2;
+          let z = y + 10;
+          return z;
+        }
+        calculate(5);
+      `);
+
+      expect(result).toBe(20);
+    });
+
+    it('should handle function without return', () => {
+      const result = run(`
+        function noReturn() {
+          let x = 5;
+        }
+        noReturn();
+      `);
+
+      expect(result.type).toBe('undefined');
+    });
+
+    it('should handle recursive functions', () => {
+      const result = runAndGetValue(`
+        function factorial(n) {
+          if (n <= 1) {
+            return 1;
+          }
+          return n * factorial(n - 1);
+        }
+        factorial(5);
+      `);
+
+      expect(result).toBe(120);
+    });
+
+    it('should handle fibonacci recursive function', () => {
+      const result = runAndGetValue(`
+        function fib(n) {
+          if (n <= 1) {
+            return n;
+          }
+          return fib(n - 1) + fib(n - 2);
+        }
+        fib(7);
+      `);
+
+      expect(result).toBe(13);
+    });
+
+    it('should handle function scope correctly', () => {
+      const result = runAndGetValue(`
+        let x = 10;
+        function test(y) {
+          let z = x + y;
+          return z;
+        }
+        test(5);
+      `);
+
+      expect(result).toBe(15);
+    });
+
+    it('should handle parameter shadowing', () => {
+      const result = runAndGetValue(`
+        let x = 10;
+        function test(x) {
+          return x + 1;
+        }
+        test(5);
+      `);
+
+      expect(result).toBe(6);
+    });
+
+    it('should throw error for wrong number of arguments', () => {
+      expect(() => {
+        run(`
+          function add(a, b) {
+            return a + b;
+          }
+          add(1);
+        `);
+      }).toThrow('expects 2 arguments but got 1');
+    });
+
+    it('should throw error when calling non-function', () => {
+      expect(() => {
+        run(`
+          let x = 5;
+          x();
+        `);
+      }).toThrow('Cannot call non-function');
+    });
+
+    it('should handle nested function calls', () => {
+      const result = runAndGetValue(`
+        function double(x) {
+          return x * 2;
+        }
+        function addThenDouble(a, b) {
+          return double(a + b);
+        }
+        addThenDouble(3, 4);
+      `);
+
+      expect(result).toBe(14);
+    });
+
+    it('should handle multiple function declarations', () => {
+      const result = runAndGetValue(`
+        function add(a, b) {
+          return a + b;
+        }
+        function multiply(a, b) {
+          return a * b;
+        }
+        multiply(add(2, 3), 4);
+      `);
+
+      expect(result).toBe(20);
+    });
+
+    it('should handle return in if statement', () => {
+      const result = runAndGetValue(`
+        function max(a, b) {
+          if (a > b) {
+            return a;
+          }
+          return b;
+        }
+        max(10, 20);
+      `);
+
+      expect(result).toBe(20);
+    });
+
+    it('should handle early return', () => {
+      const result = runAndGetValue(`
+        function test(x) {
+          if (x < 0) {
+            return 0;
+          }
+          let y = x * 2;
+          return y;
+        }
+        test(-5);
+      `);
+
+      expect(result).toBe(0);
+    });
+
+    it('should isolate function scope from outer scope', () => {
+      const result = runAndGetValue(`
+        let x = 10;
+        function test() {
+          let x = 5;
+          return x;
+        }
+        test();
+        x;
+      `);
+
+      expect(result).toBe(10);
+    });
+
+    it('should handle complex recursive scenario', () => {
+      const result = runAndGetValue(`
+        function sum(n) {
+          if (n <= 0) {
+            return 0;
+          }
+          return n + sum(n - 1);
+        }
+        sum(10);
+      `);
+
+      expect(result).toBe(55);
+    });
+
+    it('should handle function calls in expressions', () => {
+      const result = runAndGetValue(`
+        function square(x) {
+          return x * x;
+        }
+        let a = square(3);
+        let b = square(4);
+        a + b;
+      `);
+
+      expect(result).toBe(25);
+    });
+
+    it('should handle nested functions', () => {
+      const result = runAndGetValue(`
+        function outer() {
+          function inner() {
+            return 42;
+          }
+          return inner();
+        }
+        outer();
+      `);
+
+      expect(result).toBe(42);
+    });
+  });
 });

@@ -14,6 +14,7 @@ import {
     Statement,
     Expression,
     VariableDeclaration,
+    FunctionDeclaration,
     BlockStatement,
     IfStatement,
     WhileStatement,
@@ -95,6 +96,10 @@ export class SemanticAnalyzer {
                 this.analyzeVariableDeclaration(stmt as VariableDeclaration);
                 break;
 
+            case 'FunctionDeclaration':
+                this.analyzeFunctionDeclaration(stmt as FunctionDeclaration);
+                break;
+
             case 'ExpressionStatement':
                 this.analyzeExpressionStatement(stmt as ExpressionStatement);
                 break;
@@ -155,6 +160,55 @@ export class SemanticAnalyzer {
             if (error instanceof Error) {
                 this.errors.push(error.message);
             }
+        }
+    }
+
+    private analyzeFunctionDeclaration(stmt: FunctionDeclaration): void {
+        const name = stmt.name.name;
+
+        const info: SymbolInfo = {
+            kind: 'let',
+            type: 'function',
+            initialized: true,
+            line: 0,
+            column: 0
+        };
+
+        try {
+            this.environment.define(name, info);
+        } catch (error) {
+            if (error instanceof Error) {
+                this.errors.push(error.message);
+            }
+        }
+
+        const previousEnv = this.environment;
+        this.environment = this.environment.createChild();
+
+        try {
+            for (const param of stmt.parameters) {
+                const paramInfo: SymbolInfo = {
+                    kind: 'let',
+                    type: 'any',
+                    initialized: true,
+                    line: 0,
+                    column: 0
+                };
+
+                try {
+                    this.environment.define(param.name, paramInfo);
+                } catch (error) {
+                    if (error instanceof Error) {
+                        this.errors.push(error.message);
+                    }
+                }
+            }
+
+            for (const bodyStmt of stmt.body.body) {
+                this.analyzeStatement(bodyStmt);
+            }
+        } finally {
+            this.environment = previousEnv;
         }
     }
 
@@ -230,8 +284,6 @@ export class SemanticAnalyzer {
         if (stmt.argument) {
             this.analyzeExpression(stmt.argument);
         }
-
-        // TODO: Check if we're inside a function when we add function support
     }
 
     private analyzeBreakStatement(_stmt: BreakStatement): void {
@@ -363,12 +415,24 @@ export class SemanticAnalyzer {
     }
 
     private analyzeCallExpression(expr: CallExpression): TypeName {
-        this.analyzeExpression(expr.callee);
+        const calleeType = this.analyzeExpression(expr.callee);
+
+        if (calleeType !== 'function' && calleeType !== 'any') {
+            if (expr.callee.type === 'Identifier') {
+                const name = (expr.callee as Identifier).name;
+                this.errors.push(
+                    `Cannot call '${name}' - it is not a function (type: ${calleeType})`
+                );
+            } else {
+                this.errors.push(
+                    `Cannot call expression - it is not a function (type: ${calleeType})`
+                );
+            }
+        }
 
         for (const arg of expr.arguments) {
             this.analyzeExpression(arg);
         }
-
 
         return 'any';
     }

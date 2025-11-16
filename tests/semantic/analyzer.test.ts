@@ -418,4 +418,143 @@ describe('Semantic Analyzer', () => {
       expect(result.success).toBe(true);
     });
   });
+
+  describe('Function Declarations', () => {
+    it('should accept function declaration', () => {
+      const result = analyze(`
+        function add(x, y) {
+          return x + y;
+        }
+      `);
+
+      expect(result.success).toBe(true);
+    });
+
+    it('should accept function without parameters', () => {
+      const result = analyze('function hello() { return 42; }');
+
+      expect(result.success).toBe(true);
+    });
+
+    it('should reject duplicate function declaration', () => {
+      const result = analyze(`
+        function foo() { return 1; }
+        function foo() { return 2; }
+      `);
+
+      expect(result.success).toBe(false);
+      expect(result.errors[0]).toContain('already declared');
+    });
+
+    it('should allow using parameters in function body', () => {
+      const result = analyze(`
+        function multiply(a, b) {
+          return a * b;
+        }
+      `);
+
+      expect(result.success).toBe(true);
+    });
+
+    it('should reject duplicate parameter names', () => {
+      const result = analyze(`
+        function bad(x, x) {
+          return x;
+        }
+      `);
+
+      expect(result.success).toBe(false);
+      expect(result.errors[0]).toContain('already declared');
+    });
+
+    it('should allow variables in function scope', () => {
+      const result = analyze(`
+        function test(x) {
+          let y = x + 1;
+          return y;
+        }
+      `);
+
+      expect(result.success).toBe(true);
+    });
+
+    it('should not allow accessing function parameters outside function', () => {
+      const result = analyze(`
+        function foo(x) {
+          return x;
+        }
+        let y = x;
+      `);
+
+      expect(result.success).toBe(false);
+      expect(result.errors[0]).toContain('not defined');
+    });
+
+    it('should allow nested function declarations', () => {
+      const result = analyze(`
+        function outer() {
+          function inner() {
+            return 42;
+          }
+          return inner();
+        }
+      `);
+
+      expect(result.success).toBe(true);
+    });
+  });
+
+  describe('Function Calls', () => {
+    it('should accept calling declared function', () => {
+      const result = analyze(`
+        function greet() {
+          return "hello";
+        }
+        let msg = greet();
+      `);
+
+      expect(result.success).toBe(true);
+    });
+
+    it('should reject calling undeclared function', () => {
+      const result = analyze('let x = foo();');
+
+      expect(result.success).toBe(false);
+      expect(result.errors[0]).toContain('not defined');
+    });
+
+    it('should reject calling non-function value', () => {
+      const result = analyze(`
+        let x = 5;
+        x();
+      `);
+
+      expect(result.success).toBe(false);
+      expect(result.errors[0]).toContain('not a function');
+    });
+
+    it('should accept function call with arguments', () => {
+      const result = analyze(`
+        function add(a, b) {
+          return a + b;
+        }
+        let sum = add(1, 2);
+      `);
+
+      expect(result.success).toBe(true);
+    });
+
+    it('should allow recursive function calls', () => {
+      const result = analyze(`
+        function factorial(n) {
+          if (n <= 1) {
+            return 1;
+          }
+          return n * factorial(n - 1);
+        }
+      `);
+
+      expect(result.success).toBe(true);
+    });
+  });
 });

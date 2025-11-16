@@ -191,7 +191,30 @@ export class Parser {
             return AST.createUnaryExpression(operator, right);
         }
 
-        return this.parsePrimary();
+        return this.parseCall();
+    }
+
+
+    parseCall(): Expression {
+        let expr = this.parsePrimary();
+
+        // Handle function calls: identifier(args)
+        while (this.match(TokenType.LPAREN)) {
+            const args: Expression[] = [];
+
+            // Parse arguments
+            if (!this.check(TokenType.RPAREN)) {
+                do {
+                    args.push(this.parseExpression());
+                } while (this.match(TokenType.COMMA));
+            }
+
+            this.consume(TokenType.RPAREN, "Expected ')' after arguments");
+
+            expr = AST.createCallExpression(expr, args);
+        }
+
+        return expr;
     }
 
 
@@ -250,6 +273,10 @@ export class Parser {
             return this.parseVariableDeclaration();
         }
 
+        if (this.match(TokenType.FUNCTION)) {
+            return this.parseFunctionDeclaration();
+        }
+
         if (this.match(TokenType.IF)) {
             return this.parseIfStatement();
         }
@@ -285,7 +312,6 @@ export class Parser {
     parseVariableDeclaration(): Statement {
         const kind = this.previous().type === TokenType.LET ? 'let' : 'const';
 
-        // Get identifier name
         const identifier = AST.createIdentifier(
             this.consume(TokenType.IDENTIFIER, 'Expected variable name').value
         );
@@ -302,6 +328,40 @@ export class Parser {
         this.consume(TokenType.SEMICOLON, "Expected ';' after variable declaration");
 
         return AST.createVariableDeclaration(kind, identifier, initializer);
+    }
+
+
+    parseFunctionDeclaration(): Statement {
+        const name = AST.createIdentifier(
+            this.consume(TokenType.IDENTIFIER, 'Expected function name').value
+        );
+
+        this.consume(TokenType.LPAREN, "Expected '(' after function name");
+
+        const parameters: any[] = [];
+        if (!this.check(TokenType.RPAREN)) {
+            do {
+                const param = AST.createIdentifier(
+                    this.consume(TokenType.IDENTIFIER, 'Expected parameter name').value
+                );
+                parameters.push(param);
+            } while (this.match(TokenType.COMMA));
+        }
+
+        this.consume(TokenType.RPAREN, "Expected ')' after parameters");
+
+        this.consume(TokenType.LBRACE, "Expected '{' before function body");
+
+        const statements: Statement[] = [];
+        while (!this.check(TokenType.RBRACE) && !this.isAtEnd()) {
+            statements.push(this.parseStatement());
+        }
+
+        this.consume(TokenType.RBRACE, "Expected '}' after function body");
+
+        const body = AST.createBlockStatement(statements);
+
+        return AST.createFunctionDeclaration(name, parameters, body);
     }
 
 

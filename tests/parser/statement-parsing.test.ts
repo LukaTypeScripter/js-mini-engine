@@ -292,4 +292,128 @@ describe('Statement Parsing', () => {
       expect(() => parse('if x > 5 {}')).toThrow("Expected '('");
     });
   });
+
+  describe('Function Declarations', () => {
+    it('should parse function without parameters', () => {
+      const ast = parse('function foo() { return 42; }');
+
+      expect(ast.body[0].type).toBe('FunctionDeclaration');
+      expect((ast.body[0] as any).name.name).toBe('foo');
+      expect((ast.body[0] as any).parameters).toHaveLength(0);
+      expect((ast.body[0] as any).body.type).toBe('BlockStatement');
+    });
+
+    it('should parse function with single parameter', () => {
+      const ast = parse('function add(x) { return x + 1; }');
+
+      expect((ast.body[0] as any).name.name).toBe('add');
+      expect((ast.body[0] as any).parameters).toHaveLength(1);
+      expect((ast.body[0] as any).parameters[0].name).toBe('x');
+    });
+
+    it('should parse function with multiple parameters', () => {
+      const ast = parse('function multiply(a, b, c) { return a * b * c; }');
+
+      expect((ast.body[0] as any).parameters).toHaveLength(3);
+      expect((ast.body[0] as any).parameters[0].name).toBe('a');
+      expect((ast.body[0] as any).parameters[1].name).toBe('b');
+      expect((ast.body[0] as any).parameters[2].name).toBe('c');
+    });
+
+    it('should parse function with empty body', () => {
+      const ast = parse('function noop() {}');
+
+      expect((ast.body[0] as any).body.body).toHaveLength(0);
+    });
+
+    it('should parse function with complex body', () => {
+      const ast = parse(`
+        function factorial(n) {
+          if (n <= 1) {
+            return 1;
+          }
+          return n * factorial(n - 1);
+        }
+      `);
+
+      expect((ast.body[0] as any).body.body).toHaveLength(2);
+      expect((ast.body[0] as any).body.body[0].type).toBe('IfStatement');
+      expect((ast.body[0] as any).body.body[1].type).toBe('ReturnStatement');
+    });
+
+    it('should parse multiple function declarations', () => {
+      const ast = parse(`
+        function foo() { return 1; }
+        function bar() { return 2; }
+      `);
+
+      expect(ast.body).toHaveLength(2);
+      expect((ast.body[0] as any).name.name).toBe('foo');
+      expect((ast.body[1] as any).name.name).toBe('bar');
+    });
+
+    it('should throw error for missing function name', () => {
+      expect(() => parse('function () {}')).toThrow('Expected function name');
+    });
+
+    it('should throw error for missing parentheses', () => {
+      expect(() => parse('function foo {}')).toThrow("Expected '('");
+    });
+
+    it('should throw error for missing body', () => {
+      expect(() => parse('function foo()')).toThrow("Expected '{'");
+    });
+  });
+
+  describe('Function Calls', () => {
+    it('should parse function call without arguments', () => {
+      const ast = parse('foo();');
+
+      expect(ast.body[0].type).toBe('ExpressionStatement');
+      expect((ast.body[0] as any).expression.type).toBe('CallExpression');
+      expect((ast.body[0] as any).expression.callee.name).toBe('foo');
+      expect((ast.body[0] as any).expression.arguments).toHaveLength(0);
+    });
+
+    it('should parse function call with single argument', () => {
+      const ast = parse('log(42);');
+
+      expect((ast.body[0] as any).expression.arguments).toHaveLength(1);
+      expect((ast.body[0] as any).expression.arguments[0].value).toBe(42);
+    });
+
+    it('should parse function call with multiple arguments', () => {
+      const ast = parse('add(1, 2, 3);');
+
+      expect((ast.body[0] as any).expression.arguments).toHaveLength(3);
+      expect((ast.body[0] as any).expression.arguments[0].value).toBe(1);
+      expect((ast.body[0] as any).expression.arguments[1].value).toBe(2);
+      expect((ast.body[0] as any).expression.arguments[2].value).toBe(3);
+    });
+
+    it('should parse function call with expression arguments', () => {
+      const ast = parse('max(x + 1, y * 2);');
+
+      expect((ast.body[0] as any).expression.arguments[0].type).toBe('BinaryExpression');
+      expect((ast.body[0] as any).expression.arguments[1].type).toBe('BinaryExpression');
+    });
+
+    it('should parse nested function calls', () => {
+      const ast = parse('outer(inner(5));');
+
+      expect((ast.body[0] as any).expression.callee.name).toBe('outer');
+      expect((ast.body[0] as any).expression.arguments[0].type).toBe('CallExpression');
+      expect((ast.body[0] as any).expression.arguments[0].callee.name).toBe('inner');
+    });
+
+    it('should parse function call in assignment', () => {
+      const ast = parse('let result = calculate(10);');
+
+      expect((ast.body[0] as any).initializer.type).toBe('CallExpression');
+    });
+
+    it('should throw error for unclosed argument list', () => {
+      expect(() => parse('foo(1, 2')).toThrow("Expected ')'");
+    });
+  });
 });

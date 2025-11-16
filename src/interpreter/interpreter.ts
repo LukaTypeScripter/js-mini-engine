@@ -13,6 +13,7 @@ import {
     Statement,
     Expression,
     VariableDeclaration,
+    FunctionDeclaration,
     BlockStatement,
     IfStatement,
     WhileStatement,
@@ -39,7 +40,9 @@ import {
     createBooleanValue,
     createNullValue,
     createUndefinedValue,
+    createFunctionValue,
     isString,
+    isFunction,
     toBoolean,
     toNumber,
     toString,
@@ -84,6 +87,10 @@ export class Interpreter {
         switch (stmt.type) {
             case 'VariableDeclaration':
                 this.executeVariableDeclaration(stmt as VariableDeclaration);
+                break;
+
+            case 'FunctionDeclaration':
+                this.executeFunctionDeclaration(stmt as FunctionDeclaration);
                 break;
 
             case 'ExpressionStatement':
@@ -134,6 +141,19 @@ export class Interpreter {
         }
 
         this.environment.define(name, value);
+    }
+
+    private executeFunctionDeclaration(stmt: FunctionDeclaration): void {
+        const name = stmt.name.name;
+
+        const funcValue = createFunctionValue(
+            name,
+            stmt.parameters,
+            stmt.body,
+            this.environment
+        );
+
+        this.environment.define(name, funcValue);
     }
 
     private executeExpressionStatement(stmt: ExpressionStatement): void {
@@ -414,9 +434,48 @@ export class Interpreter {
         return this.evaluateExpression(expr.expression);
     }
 
-    private evaluateCallExpression(_expr: CallExpression): RuntimeValue {
-        // TODO: Implement when we add functions
-        throw new Error('Function calls not yet implemented');
+    private evaluateCallExpression(expr: CallExpression): RuntimeValue {
+        const callee = this.evaluateExpression(expr.callee);
+
+        if (!isFunction(callee)) {
+            throw new Error(
+                `Cannot call non-function value (type: ${callee.type})`
+            );
+        }
+
+        const func = callee.value;
+
+        const args: RuntimeValue[] = [];
+        for (const arg of expr.arguments) {
+            args.push(this.evaluateExpression(arg));
+        }
+
+        if (args.length !== func.parameters.length) {
+            throw new Error(
+                `Function '${func.name}' expects ${func.parameters.length} arguments but got ${args.length}`
+            );
+        }
+
+        const previousEnv = this.environment;
+        this.environment = func.declarationEnv.createChild();
+
+        try {
+            for (let i = 0; i < func.parameters.length; i++) {
+                const paramName = func.parameters[i].name;
+                this.environment.define(paramName, args[i]);
+            }
+
+            this.executeBlockStatement(func.body, false);
+
+            return createUndefinedValue();
+        } catch (error) {
+            if (error instanceof ReturnException) {
+                return error.value;
+            }
+            throw error;
+        } finally {
+            this.environment = previousEnv;
+        }
     }
 
     /**

@@ -6,11 +6,25 @@
  * this tracks the actual runtime values.
  */
 
-export type RuntimeValueType = 'number' | 'string' | 'boolean' | 'null' | 'undefined';
+import type { BlockStatement, Identifier } from '../ast/nodes';
+import type { RuntimeEnvironment } from './runtime-env';
+
+export type RuntimeValueType = 'number' | 'string' | 'boolean' | 'null' | 'undefined' | 'function';
 
 export interface RuntimeValue {
     type: RuntimeValueType;
-    value: number | string | boolean | null | undefined;
+    value: number | string | boolean | null | undefined | FunctionValue;
+}
+
+/**
+ * Function value representation
+ * Stores the function's parameters, body, and declaration environment
+ */
+export interface FunctionValue {
+    name: string;
+    parameters: Identifier[];
+    body: BlockStatement;
+    declarationEnv: RuntimeEnvironment;
 }
 
 // ========================================================================
@@ -37,6 +51,18 @@ export function createUndefinedValue(): RuntimeValue {
     return { type: 'undefined', value: undefined };
 }
 
+export function createFunctionValue(
+    name: string,
+    parameters: Identifier[],
+    body: BlockStatement,
+    declarationEnv: RuntimeEnvironment
+): RuntimeValue {
+    return {
+        type: 'function',
+        value: { name, parameters, body, declarationEnv }
+    };
+}
+
 // ========================================================================
 // TYPE CHECKING
 // ========================================================================
@@ -61,6 +87,10 @@ export function isUndefined(value: RuntimeValue): value is RuntimeValue & { type
     return value.type === 'undefined';
 }
 
+export function isFunction(value: RuntimeValue): value is RuntimeValue & { type: 'function', value: FunctionValue } {
+    return value.type === 'function';
+}
+
 // ========================================================================
 // VALUE CONVERSION
 // ========================================================================
@@ -80,6 +110,8 @@ export function toBoolean(value: RuntimeValue): boolean {
         case 'null':
         case 'undefined':
             return false;
+        case 'function':
+            return true; // functions are always truthy
         default:
             return true;
     }
@@ -99,6 +131,9 @@ export function toString(value: RuntimeValue): string {
             return 'null';
         case 'undefined':
             return 'undefined';
+        case 'function':
+            const funcValue = value.value as FunctionValue;
+            return `[Function: ${funcValue.name}]`;
         default:
             return '[Unknown Value]';
     }
@@ -120,6 +155,8 @@ export function toNumber(value: RuntimeValue): number {
             return 0;
         case 'undefined':
             return NaN;
+        case 'function':
+            return NaN; // functions convert to NaN
         default:
             return NaN;
     }
@@ -157,6 +194,10 @@ export function displayValue(value: RuntimeValue): string {
         case 'null':
         case 'undefined':
             return toString(value);
+        case 'function':
+            const funcValue = value.value as FunctionValue;
+            const params = funcValue.parameters.map(p => p.name).join(', ');
+            return `[Function: ${funcValue.name}(${params})]`;
         default:
             return '[Unknown]';
     }

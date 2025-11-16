@@ -9,7 +9,7 @@ import {  LiteralExpression } from '../ast/nodes';
 import { TokenType } from '../core';
 
 // Type names
-export type TypeName = 'number' | 'string' | 'boolean' | 'null' | 'any' | 'undefined';
+export type TypeName = 'number' | 'string' | 'boolean' | 'null' | 'any' | 'undefined' | 'function';
 
 /**
  * Infer the type of a literal expression
