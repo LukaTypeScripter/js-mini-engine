@@ -21,7 +21,7 @@ function parse(source: string) {
   return parser.parse();
 }
 
-const ast = parse('let x = 5;');
+const ast = parse('function foo(x, y) { return x + y; } foo(1, 2);');
 
 
 console.log(ast)
